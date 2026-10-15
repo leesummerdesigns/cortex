@@ -1,0 +1,9 @@
+.build/
+build/
+web/node_modules/
+web/dist/
+web/sample.json
+.DS_Store
+# Private planning notes (not part of the public repo)
+SPEC.md
+docs/

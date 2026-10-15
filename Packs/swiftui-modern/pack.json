@@ -1,0 +1,9 @@
+{
+  "id": "swiftui-modern",
+  "name": "Modern SwiftUI",
+  "author": "Cortex",
+  "version": "1.0",
+  "kind": "knowledge",
+  "color": "#f08a4b",
+  "description": "Current SwiftUI and SwiftData patterns: Observation, data flow, persistence and layout rules."
+}

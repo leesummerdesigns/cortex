@@ -1,0 +1,9 @@
+{
+  "id": "context-engineering",
+  "name": "Context Engineering",
+  "author": "Cortex",
+  "version": "1.0",
+  "kind": "knowledge",
+  "color": "#b9d27a",
+  "description": "How to give AI the right context: prompt structure, memory hygiene and writing memories AI can use."
+}

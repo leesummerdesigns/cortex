@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Cortex Graph</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: radial-gradient(ellipse 90% 80% at 45% 35%, #3a3938 0%, #262524 45%, #141414 100%); }
+  #graph { width: 100%; height: 100%; }
+  .scene-tooltip { pointer-events: none; }
+  .tip {
+    font: 12px/1.35 -apple-system, "SF Pro Text", sans-serif;
+    font-family: "SF Mono", Menlo, monospace;
+    background: rgba(8, 8, 8, 0.94);
+    border-radius: 0;
+    padding: 6px 9px;
+    color: #e8e2dc;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .tip span { color: #8a817b; font-size: 10px; }
+</style>
+</head>
+<body>
+<div id="graph"></div>
+<script src="dist/graph.js"></script>
+<script>
+  // Standalone preview (outside the app): load sample data if Swift never calls setGraph.
+  setTimeout(() => {
+    if (window.webkit?.messageHandlers?.cortex || !window.Cortex) return;
+    fetch('sample.json').then(r => r.json()).then(d => Cortex.setGraph(d)).catch(() => {});
+  }, 300);
+</script>
+</body>
+</html>

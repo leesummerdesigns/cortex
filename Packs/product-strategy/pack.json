@@ -1,0 +1,9 @@
+{
+  "id": "product-strategy",
+  "name": "Product Strategy Essentials",
+  "author": "Cortex",
+  "version": "1.0",
+  "kind": "knowledge",
+  "color": "#5b9bd5",
+  "description": "Core frameworks for product and business decisions: Jobs to be Done, aggregation, north star metrics, pricing."
+}
