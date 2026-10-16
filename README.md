@@ -15,7 +15,7 @@ Every AI chat starts from zero. Cortex gives your AI a memory that you own: a fo
 - **A graph you want to look at.** Every note is a sphere, every link a line, and you can watch pulses travel along them when an AI recalls something. Colors, glow, line shape and more are adjustable.
 - **Works inside your AI.** One click connects Claude Desktop, Claude Code and Cursor through MCP. The Bridge adds claude.ai on the web and on your phone.
 - **Core memory.** Notes in `00 Core` (who you are, how you want answers) are loaded at the start of every conversation.
-- **Personas and packs.** Switch how your AI works with you (Socratic coach, ruthless editor, senior engineer, …) or add knowledge packs. Make your own and share them as a folder.
+- **Personas and packs.** Switch how your AI works with you (finance guide, devil's advocate, language tutor, chief of staff, …) or add knowledge packs. Make your own and share them as a folder.
 - **You review what the AI remembers.** When an AI wants to save something, it lands in your inbox as a proposal. Accept or discard it in Cortex.
 - **Recall theater, timeline, health.** See what your AI just looked up, replay how your memory grew, and find orphaned or stale notes.
 
@@ -77,7 +77,25 @@ Cortex works with any folder of Markdown files and reads `[[wikilinks]]` like Ob
 
 ## Packs and personas
 
-A pack is a folder with a `pack.json` and some Markdown notes. A **persona** pack changes how the AI works with you and joins your core while it's active; a **knowledge** pack adds notes to recall. Cortex ships with six starter packs in [`Packs/`](Packs). Install, export and share packs from the **Packs** panel.
+A pack is a folder with a `pack.json` and some Markdown notes. A **persona** pack changes how the AI works with you and joins your core while it's active; a **knowledge** pack adds notes to recall. Install, export and share packs from the **Packs** panel. Cortex ships with these starter packs in [`Packs/`](Packs):
+
+| Persona | How your AI works with you |
+|---|---|
+| **Finance Guide** | Budgets, saving, debt and investing basics. Shows the math, names fees and risks, no hot tips. |
+| **Devil's Advocate** | Stress-tests plans: steelman, weakest assumption, pre-mortem, then a decision. |
+| **Language Tutor** | Conversation practice with gentle corrections; remembers your recurring mistakes. |
+| **Chief of Staff** | Priorities, decisions and ready-to-send drafts; tracks what you committed to. |
+| **Research Analyst** | Evidence first: confidence levels, graded sources, no invented citations. |
+| **Patient Teacher** | Explains anything step by step, with examples from your own projects. |
+| **Socratic Coach** | Asks sharp questions so you reach your own answer. |
+| **Ruthless Editor** | Cuts fluff and sharpens the argument while keeping your voice. |
+| **Senior Engineer** | Pragmatic, test-first, minimal diffs; pushes back on overengineering. |
+
+| Knowledge pack | What it adds |
+|---|---|
+| **Product Strategy** | Jobs to be Done, Aggregation Theory, North Star Metric, pricing models |
+| **Context Engineering** | How to write memories and context that AI uses well |
+| **SwiftUI Modern** | Current SwiftUI, Observation and SwiftData practice |
 
 ```json
 {
