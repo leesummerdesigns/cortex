@@ -139,6 +139,12 @@ The app is written to `build/Cortex.app`. Run the tests with `swift test`.
 
 The project has three parts: `CortexKit` (vault parsing, embeddings, recall, packs, connections), `CortexApp` (the SwiftUI app) and `CortexCLI` (the `cortex` helper with the MCP server and the Bridge). The graph is a three.js page in [`web/`](web) shown in a web view.
 
+## Creator
+
+Designed and built by [Louis Henrich](https://louishenrich.com/pages/about.html), an AI consultant and product designer based in Zurich, Switzerland.
+
+The [Cortex case study](https://louishenrich.com/pages/cortex.html) explains the product decisions, interaction design and implementation.
+
 ## License
 
 [MIT](LICENSE)
