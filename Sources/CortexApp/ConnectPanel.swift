@@ -72,6 +72,11 @@ struct ConnectPanel: View {
                     ConnectButton(connected: c.cursor) { model.setCursor(!c.cursor) }
                 }
 
+                AppRow(name: "Codex", appPath: "/Applications/Codex.app", installed: c.codexInstalled,
+                       connected: c.codex, detail: "OpenAI's coding agent: app, CLI and IDE.") {
+                    ConnectButton(connected: c.codex) { model.setCodex(!c.codex) }
+                }
+
                 HStack {
                     Image(systemName: "puzzlepiece.extension").frame(width: 28)
                     VStack(alignment: .leading, spacing: 1) {
@@ -180,12 +185,22 @@ private struct BridgeSection: View {
                         Button("New code") { model.newPairingCode() }.controlSize(.small)
                     }
                     VStack(alignment: .leading, spacing: 4) {
+                        Text("Claude — web, phone & desktop").font(.caption.weight(.semibold))
                         step(1, "On claude.ai: Settings → Connectors → Add custom connector")
                         step(2, "Paste the connector URL, click Add, then Connect")
                         step(3, "Enter the pairing code — done. Claude on your phone gets it too.")
                     }
-                    Text("ChatGPT: Settings → Apps & Connectors → Advanced → Developer mode → Create (depends on your plan).")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("ChatGPT — web, phone & desktop").font(.caption.weight(.semibold))
+                            Spacer()
+                            Link("Open ChatGPT", destination: URL(string: "https://chatgpt.com/#settings/Connectors")!)
+                                .font(.caption)
+                        }
+                        step(1, "Settings → Apps → Advanced settings → turn on Developer mode (Plus, Pro, Business)")
+                        step(2, "Create app: name Cortex, paste the connector URL, Authentication OAuth")
+                        step(3, "Enter the pairing code, then pick Cortex in a chat via + → Developer mode")
+                    }
                 }
                 .padding(.vertical, 4)
             }

@@ -3,7 +3,7 @@
 <h1 align="center">Cortex</h1>
 
 <p align="center"><b>A second brain for your AI.</b><br>
-Your memories as plain Markdown files, shown as a living neural network, and available inside Claude, Cursor and other AI apps.</p>
+Your memories as plain Markdown files, shown as a living neural network, and available inside Claude, ChatGPT, Cursor and other AI apps.</p>
 
 <p align="center"><a href="https://github.com/leesummerdesigns/cortex/releases/latest/download/Cortex.zip"><b>Download for Mac</b></a> · macOS 15 or later · Apple Silicon and Intel · free and open source</p>
 
@@ -13,7 +13,7 @@ Every AI chat starts from zero. Cortex gives your AI a memory that you own: a fo
 
 - **Your files, your Mac.** Notes stay plain `.md` files. Search and connections run on-device with Apple's language models. Nothing leaves your Mac unless you turn on the Bridge.
 - **A graph you want to look at.** Every note is a sphere, every link a line, and you can watch pulses travel along them when an AI recalls something. Colors, glow, line shape and more are adjustable.
-- **Works inside your AI.** One click connects Claude Desktop, Claude Code and Cursor through MCP. The Bridge adds claude.ai on the web and on your phone.
+- **Works inside your AI.** One click connects Claude Desktop, Claude Code, Cursor and Codex through MCP. The Bridge adds Claude and ChatGPT on the web and on your phone.
 - **Core memory.** Notes in `00 Core` (who you are, how you want answers) are loaded at the start of every conversation.
 - **Personas and packs.** Switch how your AI works with you (finance guide, devil's advocate, language tutor, chief of staff, …) or add knowledge packs. Make your own and share them as a folder.
 - **You review what the AI remembers.** When an AI wants to save something, it lands in your inbox as a proposal. Accept or discard it in Cortex.
@@ -39,8 +39,10 @@ Open **Connect** in the sidebar.
 | **Claude Desktop** | Click **Connect**, then **Install** in the window Claude opens. |
 | **Claude Code** | Click **Connect**. Optionally turn on the session hook so every session starts with your core memory. |
 | **Cursor** | Click **Connect**. |
+| **Codex** (OpenAI's coding agent: app, CLI, IDE) | Click **Connect**, then start a new Codex session. |
 | **Other MCP apps** (Windsurf, VS Code, Zed, …) | Click **Copy config** and paste it into the app's MCP settings. |
 | **claude.ai (web, iPhone, Android)** | Turn on the **Bridge**, then add the shown address in claude.ai under **Settings → Connectors → Add custom connector**. Approve the device with the pairing code shown in Cortex. |
+| **ChatGPT (web, phone, desktop)** | Turn on the **Bridge**. In ChatGPT: **Settings → Apps → Advanced settings → Developer mode** (Plus, Pro or Business), then **Create app** with the shown address and OAuth. Approve with the pairing code, then pick Cortex in a chat via **+ → Developer mode**. |
 
 Your AI then gets these tools:
 

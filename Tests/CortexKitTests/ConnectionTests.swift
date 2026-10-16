@@ -95,3 +95,23 @@ private let vault = URL(fileURLWithPath: "/Users/x/vault")
     try c.installHelper(from: source)
     #expect(try String(contentsOf: target, encoding: .utf8) == "v2")
 }
+
+@Test(.enabled(if: Connections().codexCLI != nil, "needs the codex CLI"))
+func codexConnectKeepsOtherSettings() throws {
+    let home = try tempHome()
+    let c = Connections(home: home)
+    try FileManager.default.createDirectory(at: c.codexConfig.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try "model = \"gpt-5\"\n\n[mcp_servers.github]\ncommand = \"gh-mcp\"\n".write(to: c.codexConfig, atomically: true, encoding: .utf8)
+
+    try c.connectCodex(helper: helper, vault: vault)
+    try c.connectCodex(helper: helper, vault: vault) // reconnect replaces, never duplicates
+    #expect(c.codexConnected)
+    let text = try String(contentsOf: c.codexConfig, encoding: .utf8)
+    #expect(text.components(separatedBy: "[mcp_servers.cortex]").count == 2)
+    #expect(text.contains("Application Support/Cortex/bin/cortex"))
+    #expect(text.contains("[mcp_servers.github]") && text.contains("model = \"gpt-5\""))
+
+    try c.disconnectCodex()
+    #expect(!c.codexConnected)
+    #expect(try String(contentsOf: c.codexConfig, encoding: .utf8).contains("[mcp_servers.github]"))
+}

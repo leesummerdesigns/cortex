@@ -87,6 +87,34 @@ public struct Connections: Sendable {
             || ($0["command"] as? String)?.contains("Helpers/cortex\" core") == true }
     }
 
+    // MARK: Codex (OpenAI's coding agent: CLI, IDE extension and Codex app share ~/.codex/config.toml)
+
+    public var codexConfig: URL { home.appendingPathComponent(".codex/config.toml") }
+
+    /// The `codex` CLI, if installed in one of the usual places.
+    public var codexCLI: URL? {
+        ["/opt/homebrew/bin/codex", "/usr/local/bin/codex", "~/.local/bin/codex", "/Applications/Codex.app/Contents/Resources/codex"]
+            .map { URL(fileURLWithPath: $0.replacingOccurrences(of: "~", with: home.path)) }
+            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
+    }
+
+    public var codexConnected: Bool {
+        let text = (try? String(contentsOf: codexConfig, encoding: .utf8)) ?? ""
+        return text.split(separator: "\n").contains { $0.trimmingCharacters(in: .whitespaces) == "[mcp_servers.cortex]" }
+    }
+
+    /// Registers Cortex via the official CLI (it owns config.toml).
+    public func connectCodex(helper: URL, vault: URL) throws {
+        guard let cli = codexCLI else { throw ConnectionError.codexMissing }
+        if codexConnected { try run(cli, ["mcp", "remove", "cortex"]) }
+        try run(cli, ["mcp", "add", "cortex", "--", helper.path, "mcp", vault.path])
+    }
+
+    public func disconnectCodex() throws {
+        guard let cli = codexCLI else { throw ConnectionError.codexMissing }
+        try run(cli, ["mcp", "remove", "cortex"])
+    }
+
     // MARK: Cursor (and other apps using the mcpServers JSON format)
 
     public var cursorConfig: URL { home.appendingPathComponent(".cursor/mcp.json") }
@@ -216,11 +244,13 @@ public struct Connections: Sendable {
 
 public enum ConnectionError: LocalizedError {
     case claudeCodeMissing
+    case codexMissing
     case commandFailed(String)
 
     public var errorDescription: String? {
         switch self {
         case .claudeCodeMissing: "Claude Code isn't installed (no `claude` command found)."
+        case .codexMissing: "Codex isn't installed (no `codex` command found)."
         case .commandFailed(let message): message.isEmpty ? "The command failed." : message
         }
     }

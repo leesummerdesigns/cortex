@@ -60,7 +60,8 @@ final class AppModel {
         var claudeDesktopInstalled = false, claudeDesktop = false
         var claudeCodeInstalled = false, claudeCode = false, sessionHook = false
         var cursorInstalled = false, cursor = false
-        var any: Bool { claudeDesktop || claudeCode || cursor }
+        var codexInstalled = false, codex = false
+        var any: Bool { claudeDesktop || claudeCode || cursor || codex }
     }
     var connection = ConnectionState()
     var connectBusy = false
@@ -447,6 +448,7 @@ final class AppModel {
         if state.claudeCode { setClaudeCode(true) }
         if state.sessionHook { setSessionHook(true) }
         if state.cursor { setCursor(true) }
+        if state.codex { setCodex(true) }
         restartBridgeServer()
         Task {
             await reload()
@@ -590,7 +592,9 @@ final class AppModel {
             claudeCode: connections.claudeCodeConnected,
             sessionHook: connections.sessionHookInstalled,
             cursorInstalled: fm.fileExists(atPath: "/Applications/Cursor.app") || fm.fileExists(atPath: connections.cursorConfig.deletingLastPathComponent().path),
-            cursor: connections.cursorConnected
+            cursor: connections.cursorConnected,
+            codexInstalled: connections.codexCLI != nil,
+            codex: connections.codexConnected
         )
     }
 
@@ -635,6 +639,13 @@ final class AppModel {
         let (c, helper, vault) = (connections, URL(fileURLWithPath: helperPath), vaultURL)
         runConnection(on ? "Connected Cursor — restart Cursor to load Cortex" : "Disconnected Cursor") {
             if on { try c.connectCursor(helper: helper, vault: vault) } else { try c.disconnectCursor() }
+        }
+    }
+
+    func setCodex(_ on: Bool) {
+        let (c, helper, vault) = (connections, URL(fileURLWithPath: helperPath), vaultURL)
+        runConnection(on ? "Connected Codex — start a new Codex session to load Cortex" : "Disconnected Codex") {
+            if on { try c.connectCodex(helper: helper, vault: vault) } else { try c.disconnectCodex() }
         }
     }
 
