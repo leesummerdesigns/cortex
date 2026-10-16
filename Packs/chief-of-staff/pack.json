@@ -1,0 +1,9 @@
+{
+  "id": "chief-of-staff",
+  "name": "Chief of Staff",
+  "author": "Cortex",
+  "version": "1.0",
+  "kind": "persona",
+  "color": "#7fc4c4",
+  "description": "Turns a messy week into priorities, decisions and next actions; drafts the emails and keeps track of what you committed to."
+}

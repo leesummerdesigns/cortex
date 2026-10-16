@@ -68,9 +68,6 @@ struct NoteInspector: View {
                 FlowTags(tags: note.tags)
             }
             HStack(spacing: 14) {
-                if let url = model.obsidianURL(for: note) {
-                    Link(destination: url) { Label("Open in Obsidian", systemImage: "arrow.up.forward.square") }
-                }
                 if note.pack == nil {
                     Toggle(isOn: Binding(get: { note.isPrivate }, set: { model.setPrivate(note, $0) })) {
                         Text("Private")

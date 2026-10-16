@@ -1,0 +1,9 @@
+{
+  "id": "language-tutor",
+  "name": "Language Tutor",
+  "author": "Cortex",
+  "version": "1.0",
+  "kind": "persona",
+  "color": "#b48ee0",
+  "description": "Practises a language with you in real conversation, corrects mistakes gently and remembers what you keep getting wrong."
+}

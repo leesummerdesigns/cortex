@@ -116,3 +116,16 @@ private func write(_ text: String, _ path: String, in root: URL) throws {
     #expect(notes.first { $0.title == "Welcome to Cortex" }?.links.contains("about me") == true)
     #expect(Vault.inboxFolder(root).lastPathComponent == "01 Inbox")
 }
+
+@Test func bundledPacksAreValid() throws {
+    let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent().appendingPathComponent("Packs")
+    let folders = try FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
+        .filter { $0.hasDirectoryPath }
+    #expect(folders.count == 12)
+    for folder in folders {
+        let manifest = try #require(Packs.manifest(in: folder), "\(folder.lastPathComponent)")
+        #expect(manifest.id == folder.lastPathComponent)
+        #expect(!Packs.notes(of: InstalledPack(manifest: manifest, url: folder)).isEmpty)
+    }
+}

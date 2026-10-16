@@ -710,15 +710,6 @@ final class AppModel {
         }
     }
 
-    func obsidianURL(for note: Note) -> URL? {
-        guard note.pack == nil else { return nil }
-        var c = URLComponents()
-        c.scheme = "obsidian"
-        c.host = "open"
-        c.queryItems = [.init(name: "vault", value: vaultURL.lastPathComponent), .init(name: "file", value: note.id)]
-        return c.url
-    }
-
     // MARK: Helpers
 
     private func js(_ script: String) {

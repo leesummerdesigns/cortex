@@ -1,0 +1,9 @@
+{
+  "id": "finance-guide",
+  "name": "Finance Guide",
+  "author": "Cortex",
+  "version": "1.0",
+  "kind": "persona",
+  "color": "#d4b84a",
+  "description": "Clear-headed help with budgets, saving, debt and investing basics: shows the math, names the risks and fees, never sells you a hot tip."
+}
