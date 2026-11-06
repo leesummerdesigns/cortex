@@ -69,6 +69,7 @@ struct NoteInspector: View {
             }
             HStack(spacing: 14) {
                 if note.pack == nil {
+                    GroupMenu(model: model, note: note)
                     Toggle(isOn: Binding(get: { note.isPrivate }, set: { model.setPrivate(note, $0) })) {
                         Text("Private")
                     }
@@ -110,7 +111,7 @@ struct NoteInspector: View {
     private func noteButton(_ note: Note, trailing: String? = nil) -> some View {
         Button { model.select(note.id) } label: {
             HStack(spacing: 8) {
-                LayerDot(layer: note.layer, size: 6, hex: note.pack?.color)
+                LayerDot(layer: note.layer, size: 6, hex: model.dotHex(note))
                 Text(note.title).lineLimit(1)
                 Spacer()
                 if let trailing { Text(trailing).font(.caption.monospacedDigit()).foregroundStyle(.tertiary) }
@@ -123,6 +124,66 @@ struct NoteInspector: View {
     private func startEditing(_ note: Note) {
         draft = (try? String(contentsOf: note.url, encoding: .utf8)) ?? note.body
         isEditing = true
+    }
+}
+
+/// Puts the note into one group (or none); its group gathers in its own coloured cluster on the graph.
+private struct GroupMenu: View {
+    @Bindable var model: AppModel
+    let note: Note
+    @State private var isNaming = false
+    @State private var name = ""
+    @FocusState private var nameFocused: Bool
+
+    var body: some View {
+        Menu {
+            Button { model.setGroup(note, nil) } label: { item("No group", selected: note.group == nil) }
+            if !model.groups.isEmpty { Divider() }
+            ForEach(model.groups, id: \.self) { group in
+                Button { model.setGroup(note, group) } label: { item(group, selected: note.group == group) }
+            }
+            Divider()
+            Button("New group…") { name = ""; isNaming = true }
+        } label: {
+            Text(note.group.map { "Group: \($0)" } ?? "No group")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Notes in a group gather in their own coloured cluster on the graph.")
+        // A sheet, not an alert: an alert opens with focus on Cancel, so the first space typed would close it.
+        .sheet(isPresented: $isNaming) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("New group").font(.headline)
+                Text("“\(note.title)” moves into the new group.").foregroundStyle(.secondary)
+                TextField("Name", text: $name)
+                    .focused($nameFocused)
+                    .onSubmit(create)
+                HStack {
+                    Spacer()
+                    Button("Cancel", role: .cancel) { isNaming = false }
+                        .keyboardShortcut(.cancelAction)
+                    Button("Create", action: create)
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(trimmedName.isEmpty)
+                }
+            }
+            .padding(20)
+            .frame(width: 320)
+            .defaultFocus($nameFocused, true)
+        }
+    }
+
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    private func create() {
+        guard !trimmedName.isEmpty else { return }
+        isNaming = false
+        model.setGroup(note, trimmedName)
+    }
+
+    @ViewBuilder
+    private func item(_ title: String, selected: Bool) -> some View {
+        if selected { Label(title, systemImage: "checkmark") } else { Text(title) }
     }
 }
 

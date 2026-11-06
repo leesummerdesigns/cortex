@@ -50,6 +50,12 @@ public struct Note: Identifiable, Sendable {
     /// Written by an AI tool and waiting for the user's review.
     public var isProposal: Bool { status?.lowercased() == "proposal" }
     public var source: String? { frontmatter["source"]?.string }
+    /// The group this note clusters with on the graph (`group:`). Pack notes cluster by pack instead.
+    public var group: String? {
+        guard pack == nil, let group = frontmatter["group"]?.string?.trimmingCharacters(in: .whitespaces), !group.isEmpty
+        else { return nil }
+        return group
+    }
 }
 
 public enum FrontmatterValue: Sendable, Equatable {

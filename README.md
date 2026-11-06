@@ -76,6 +76,7 @@ Cortex works with any folder of Markdown files and reads `[[wikilinks]]` like Ob
 | everything else | **Memory**: recalled when relevant |
 | `layer: core` | Overrides the folder rule for one note |
 | `privacy: private` | Never shared with any AI |
+| `group: Name` | Clusters the note with its group in a coloured sector of the graph (one group per note; set it from the note inspector) |
 
 ## Packs and personas
 

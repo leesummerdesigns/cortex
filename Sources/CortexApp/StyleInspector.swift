@@ -24,6 +24,18 @@ struct StyleInspector: View {
                 slider("Opacity", \.nodeOpacity, 0.2...1, format: "%.0f%%", scale: 100)
             }
 
+            if !model.groups.isEmpty {
+                Section("Groups") {
+                    ForEach(model.groups, id: \.self) { group in
+                        ColorPicker(group, selection: Binding(
+                            get: { Color(hex: model.groupColor(group)) },
+                            set: { model.setGroupColor(group, $0.hex) }
+                        ), supportsOpacity: false)
+                    }
+                    slider("Cluster glow", \.groupGlow, 0...1, format: "%.0f%%", scale: 100)
+                }
+            }
+
             Section("Material") {
                 slider("Gloss", \.gloss, 0...200, format: "%.0f")
                 slider("Reflection", \.reflection, 0...1, format: "%.0f%%", scale: 100)

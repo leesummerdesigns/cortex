@@ -106,6 +106,26 @@ private struct Sidebar: View {
                 }
             }
 
+            if !model.groups.isEmpty {
+                Section("Groups") {
+                    ForEach(model.groups, id: \.self) { group in
+                        let notes = model.notes(inGroup: group)
+                        DisclosureGroup {
+                            ForEach(notes) { note in
+                                Text(note.title).lineLimit(1).tag(note.id)
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                LayerDot(layer: .memory, hex: model.groupColor(group))
+                                Text(group)
+                                Spacer()
+                                Text("\(notes.count)").foregroundStyle(.secondary).monospacedDigit()
+                            }
+                        }
+                    }
+                }
+            }
+
             if !model.proposals.isEmpty {
                 Section {
                     ForEach(model.proposals) { note in
@@ -129,7 +149,7 @@ private struct Sidebar: View {
                     Section(Theme.name(layer)) {
                         ForEach(notes) { note in
                             HStack(spacing: 8) {
-                                LayerDot(layer: layer, size: 6, hex: note.pack?.color)
+                                LayerDot(layer: layer, size: 6, hex: model.dotHex(note))
                                 Text(note.title).lineLimit(1)
                                 if note.isPrivate {
                                     Spacer()

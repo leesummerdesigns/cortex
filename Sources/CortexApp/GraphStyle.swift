@@ -29,6 +29,7 @@ struct GraphStyle: Codable, Equatable {
     var reflection = 0.35     // specular strength
     var glow = 0.0            // halo opacity
     var glowSize = 4.0        // halo radius in node radii
+    var groupGlow = 0.35      // opacity of the coloured cloud behind each group's cluster
 
     // Lines
     var manualLinkColor = "#eb5458"

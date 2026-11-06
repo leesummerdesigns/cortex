@@ -44,10 +44,20 @@ public struct InstalledPack: Identifiable, Sendable {
 public struct CortexConfig: Codable, Sendable, Equatable {
     public var activePersona: String?
     public var enabledPacks: [String] = []
+    /// Group name → hex colour on the graph.
+    public var groupColors: [String: String] = [:]
 
     public init(activePersona: String? = nil, enabledPacks: [String] = []) {
         self.activePersona = activePersona
         self.enabledPacks = enabledPacks
+    }
+
+    // Keys added in later versions may be missing from older config files.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        activePersona = try c.decodeIfPresent(String.self, forKey: .activePersona)
+        enabledPacks = try c.decodeIfPresent([String].self, forKey: .enabledPacks) ?? []
+        groupColors = try c.decodeIfPresent([String: String].self, forKey: .groupColors) ?? [:]
     }
 
     public static func url(vault: URL) -> URL { vault.appendingPathComponent(".cortex/config.json") }

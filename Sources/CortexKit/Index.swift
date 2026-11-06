@@ -19,6 +19,7 @@ public struct GraphNode: Codable, Sendable {
     /// Pack colour (pack notes and the active persona only).
     public let color: String?
     public let pack: String?
+    public let group: String?
     public let proposal: Bool
     public let isPrivate: Bool
 }
@@ -26,6 +27,8 @@ public struct GraphNode: Codable, Sendable {
 public struct GraphPayload: Codable, Sendable {
     public let nodes: [GraphNode]
     public let links: [GraphLink]
+    /// Group name → hex colour.
+    public let groups: [String: String]
 }
 
 public struct Hit: Codable, Sendable, Hashable {
@@ -142,16 +145,16 @@ public final class Index {
         }
     }
 
-    public func graph() -> GraphPayload {
+    public func graph(groupColors: [String: String] = [:]) -> GraphPayload {
         let links = manualLinks + autoLinks
         var degree: [String: Int] = [:]
         for l in manualLinks { degree[l.source, default: 0] += 1; degree[l.target, default: 0] += 1 }
         let nodes = notes.map {
             GraphNode(id: $0.id, title: $0.title, folder: $0.folder, layer: $0.layer, degree: degree[$0.id] ?? 0,
                       created: ($0.created.timeIntervalSince1970 * 1000).rounded(), color: $0.pack?.color,
-                      pack: $0.pack?.name, proposal: $0.isProposal, isPrivate: $0.isPrivate)
+                      pack: $0.pack?.name, group: $0.group, proposal: $0.isProposal, isPrivate: $0.isPrivate)
         }
-        return GraphPayload(nodes: nodes, links: links)
+        return GraphPayload(nodes: nodes, links: links, groups: groupColors)
     }
 
     public func note(_ id: String) -> Note? { byId[id] }

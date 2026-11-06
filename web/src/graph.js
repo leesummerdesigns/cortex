@@ -10,7 +10,7 @@ const S = {
   coreColor: '#f3e9df', contextColor: '#e5484d', memoryColor: '#b8a397', orphanColor: '#5e463c', recallColor: '#ffc21a',
   packColor: '#5b9bd5',
   nodeSize: 1, nodeOpacity: 1,
-  gloss: 70, reflection: 0.35, glow: 0, glowSize: 4,
+  gloss: 70, reflection: 0.35, glow: 0, glowSize: 4, groupGlow: 0.35,
   manualLinkColor: '#eb5458', autoLinkColor: '#a0b6b4', manualLinkOpacity: 0.85, autoLinkOpacity: 0.5,
   lineWidth: 0.2, curvature: 0, showAutoLinks: true,
   pulseRate: 6, pulseSize: 1.2, pulseSpeed: 0.01, pulseColor: '#f3e9df',
@@ -49,9 +49,39 @@ const haloTexture = (() => {
   return new THREE.CanvasTexture(c);
 })();
 
+// Softer and wider than the halo: the cloud behind a group's cluster.
+// Computed rather than drawn on a canvas: in the app's WKWebView a canvas gradient comes out speckled,
+// and stretched this far the specks show as dark blots in the cloud.
+const nebulaTexture = (() => {
+  const size = 128;
+  const stops = [[0, 1], [0.45, 0.55], [0.8, 0.15], [1, 0]];
+  const alpha = (d) => {
+    const i = stops.findIndex(([at]) => d <= at);
+    if (i <= 0) return i === 0 ? stops[0][1] : 0;
+    const [a, va] = stops[i - 1], [b, vb] = stops[i];
+    return va + ((d - a) / (b - a)) * (vb - va);
+  };
+  const data = new Uint8Array(size * size * 4).fill(255);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const d = Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2);
+      data[(y * size + x) * 4 + 3] = Math.round(alpha(d) * 255);
+    }
+  }
+  const texture = new THREE.DataTexture(data, size, size);
+  texture.magFilter = texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+})();
+
+// Group name → hex. Core notes stay in the centre with the core colour, whatever their group.
+let groupColors = new Map();
+const inGroup = (n) => n.group != null && n.layer !== 'core' && groupColors.has(n.group);
+
 const nodeSize = (n) => (LAYER[n.layer].size + Math.sqrt(n.degree || 0) * 0.9) * S.nodeSize;
-// Pack notes (and the active persona inside the core) keep their pack colour.
-const baseHex = (n) => n.color ?? (n.layer === 'memory' && !n.linked ? S.orphanColor : S[`${n.layer}Color`]);
+// Pack notes (and the active persona inside the core) keep their pack colour; grouped notes take their group's.
+const baseHex = (n) => n.color ?? (inGroup(n) ? groupColors.get(n.group)
+  : n.layer === 'memory' && !n.linked ? S.orphanColor : S[`${n.layer}Color`]);
 const hasLabel = (n) => ({ none: false, core: n.layer === 'core', context: n.layer !== 'memory', all: true }[S.labels]);
 
 // ---- label tags ----------------------------------------------------------------
@@ -118,7 +148,7 @@ const graph = new ForceGraph3D(el, { controlType: 'orbit' })
   .backgroundColor('rgba(0,0,0,0)') // gradient comes from CSS behind the canvas
   .showNavInfo(false)
   .nodeThreeObject(makeNode)
-  .nodeLabel((n) => `<div class="tip"><b>${escapeHtml(n.title)}</b><span>${escapeHtml(n.folder)}</span></div>`)
+  .nodeLabel((n) => `<div class="tip"><b>${escapeHtml(n.title)}</b><span>${escapeHtml(n.folder)}${n.group ? ` · ${escapeHtml(n.group)}` : ''}</span></div>`)
   .linkOpacity(1) // library default is 0.2, which multiplies with our per-line alpha
   .linkCurveRotation((l) => (l.__rot ??= Math.random() * Math.PI * 2))
   .onNodeClick((n) => { post({ type: 'select', id: n.id }); focusNode(n); })
@@ -154,12 +184,19 @@ function applyForces() {
     .distance((l) => (l.kind === 'manual' ? 36 : 64) * S.spread)
     .strength((l) => (l.kind === 'manual' ? 0.5 : 0.08 * l.weight));
   graph.d3Force('radial', forceRadial((n) => LAYER[n.layer].radius * S.spread).strength((n) => LAYER[n.layer].strength));
-  // Each pack gathers around its own anchor on the outer ring.
-  const anchor = (n) => packAnchors.get(n.pack) ?? { x: 0, y: 0, z: 0 };
-  const pull = (n) => (n.layer === 'pack' ? 0.1 : 0);
-  graph.d3Force('packX', forceX((n) => anchor(n).x * S.spread).strength(pull));
-  graph.d3Force('packY', forceY((n) => anchor(n).y * S.spread).strength(pull));
-  graph.d3Force('packZ', forceZ((n) => anchor(n).z * S.spread).strength(pull));
+  // Each pack gathers around its own anchor on the outer ring; each group in its own sector of the
+  // context and memory rings (same direction, at its layer's radius).
+  const anchor = (n) => {
+    if (n.layer === 'pack') return packAnchors.get(n.pack);
+    if (!inGroup(n)) return null;
+    const dir = groupDirections.get(n.group);
+    const r = LAYER[n.layer].radius;
+    return { x: dir.x * r, y: 0, z: dir.z * r };
+  };
+  const pull = (n) => (n.layer === 'pack' ? 0.1 : inGroup(n) ? 0.12 : 0);
+  graph.d3Force('clusterX', forceX((n) => (anchor(n)?.x ?? 0) * S.spread).strength(pull));
+  graph.d3Force('clusterY', forceY((n) => (anchor(n)?.y ?? 0) * S.spread).strength(pull));
+  graph.d3Force('clusterZ', forceZ((n) => (anchor(n)?.z ?? 0) * S.spread).strength(pull));
 }
 
 let packAnchors = new Map();
@@ -168,6 +205,16 @@ function placePacks(nodes) {
   packAnchors = new Map(packs.map((p, i) => {
     const a = (i / Math.max(1, packs.length)) * Math.PI * 2 + 0.6;
     return [p, { x: Math.cos(a) * 360, y: (i % 2 ? 70 : -70), z: Math.sin(a) * 360 }];
+  }));
+}
+
+// Groups split the circle into equal sectors.
+let groupDirections = new Map();
+function placeGroups(nodes) {
+  const groups = [...new Set(nodes.filter(inGroup).map((n) => n.group))].sort();
+  groupDirections = new Map(groups.map((g, i) => {
+    const a = (i / groups.length) * Math.PI * 2;
+    return [g, { x: Math.cos(a), z: Math.sin(a) }];
   }));
 }
 
@@ -186,6 +233,60 @@ controls.addEventListener('start', () => { controls.autoRotate = false; });
 
 // Track the element, not the window: the native panel beside the graph changes our width.
 new ResizeObserver(() => graph.width(el.clientWidth).height(el.clientHeight)).observe(el);
+
+// ---- group clusters: a coloured cloud and a label that follow each group's members ----
+
+let clusters = []; // [{ name, members, nebula, label }]
+
+function buildClusters(nodes) {
+  for (const c of clusters) {
+    scene.remove(c.nebula, c.label);
+    c.nebula.material.dispose(); // the texture is shared
+    c.label.material.map.dispose();
+    c.label.material.dispose();
+  }
+  clusters =[...groupDirections.keys()].map((name) => {
+    const nebula = new THREE.Sprite(new THREE.SpriteMaterial({ map: nebulaTexture, transparent: true, depthWrite: false }));
+    nebula.renderOrder = -1;
+    const label = new SpriteText(name.toUpperCase(), 3.4 * S.labelSize);
+    label.fontFace = MONO;
+    label.fontWeight = '600';
+    label.padding = [4, 2];
+    label.borderRadius = 0;
+    label.borderWidth = 0.3;
+    label.backgroundColor = 'rgba(8,8,8,0.92)';
+    label.material.depthWrite = false;
+    const c = { name, members: nodes.filter((n) => inGroup(n) && n.group === name), nebula, label };
+    colorCluster(c);
+    scene.add(nebula, label);
+    return c;
+  });
+}
+
+function colorCluster(c) {
+  const hex = groupColors.get(c.name);
+  c.nebula.material.color.set(hex);
+  c.label.color = hex;
+  c.label.borderColor = hex;
+}
+
+function updateClusters() {
+  const fade = 1 - dimTarget * 0.75; // during a recall the lit memories stand out
+  for (const c of clusters) {
+    const shown = c.members.filter((n) => n.x != null && nodeVisible(n));
+    c.nebula.visible = shown.length > 0 && S.groupGlow > 0;
+    c.label.visible = shown.length > 0 && S.labels !== 'none';
+    if (!shown.length) continue;
+    const m = { x: 0, y: 0, z: 0 };
+    for (const n of shown) { m.x += n.x / shown.length; m.y += n.y / shown.length; m.z += n.z / shown.length; }
+    const extent = Math.max(...shown.map((n) => Math.hypot(n.x - m.x, n.y - m.y, n.z - m.z)));
+    c.nebula.position.set(m.x, m.y, m.z);
+    c.nebula.scale.setScalar((extent + 25) * 2.4);
+    c.nebula.material.opacity = S.groupGlow * fade;
+    c.label.position.set(m.x, m.y + extent + 14, m.z);
+    c.label.material.opacity = fade;
+  }
+}
 
 // ---- style -------------------------------------------------------------------
 
@@ -218,6 +319,7 @@ function applyPending() {
   if (changed.some((k) => REBUILD.includes(k))) {
     clearRecall();
     graph.nodeThreeObject((n) => makeNode(n)); // a new accessor makes every node object rebuild
+    buildClusters(graph.graphData().nodes);
   } else {
     for (const n of graph.graphData().nodes) if (n.__mat) applyMaterial(n);
   }
@@ -263,6 +365,7 @@ let dimTarget = 0;
     n.__halo.scale.setScalar(n.__r * S.glowSize * 2 * (1 + n.flash * 0.6));
     if (n.__label) n.__label.material.opacity = 1 - n.dim * 0.85;
   }
+  updateClusters();
   requestAnimationFrame(tick);
 })();
 
@@ -296,9 +399,12 @@ function setGraph(data) {
     linksByNode.get(l.target)?.push(l);
   }
   for (const n of data.nodes) n.linked = neighbours.get(n.id).size > 0;
+  groupColors = new Map(Object.entries(data.groups || {}));
   placePacks(data.nodes);
+  placeGroups(data.nodes);
   applyForces();
   graph.graphData(data);
+  buildClusters(data.nodes);
   if (recallActive) relight();
   // Frame once the first layout has settled (nodes start at the origin and expand).
   // (rAF is throttled while the window is occluded, so a timer backs up onEngineStop.)
@@ -397,6 +503,13 @@ function setTimeline(ms) {
   styleLinks();
 }
 
+// colors: { group: hex }. Recolours spheres and clusters in place (live while a colour is being picked).
+function setGroupColors(colors) {
+  for (const [g, hex] of Object.entries(colors)) groupColors.set(g, hex);
+  for (const n of graph.graphData().nodes) if (n.__mat) applyMaterial(n);
+  clusters.forEach(colorCluster);
+}
+
 function overview() {
   clearRecall();
   controls.autoRotate = S.rotation > 0;
@@ -414,5 +527,5 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
-window.Cortex = { setGraph, recall, clearRecall, select, setLayers, setTimeline, overview, setStyle, _graph: graph };
+window.Cortex = { setGraph, recall, clearRecall, select, setLayers, setTimeline, overview, setStyle, setGroupColors, _graph: graph };
 post({ type: 'ready' });

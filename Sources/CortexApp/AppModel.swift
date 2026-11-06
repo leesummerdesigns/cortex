@@ -103,6 +103,7 @@ final class AppModel {
     @ObservationIgnored private var watchTask: Task<Void, Never>?
     @ObservationIgnored private var timelineTask: Task<Void, Never>?
     @ObservationIgnored private var toastTask: Task<Void, Never>?
+    @ObservationIgnored private var groupColorSave: Task<Void, Never>?
 
     var selectedNote: Note? { selectedID.flatMap { index?.note($0) } }
     var proposals: [Note] { (index?.notes ?? []).filter(\.isProposal) }
@@ -110,6 +111,54 @@ final class AppModel {
 
     func notes(in layer: Layer) -> [Note] {
         (index?.notes ?? []).filter { $0.layer == layer && !$0.isProposal }
+    }
+
+    // MARK: Groups
+
+    var groups: [String] {
+        Set((index?.notes ?? []).filter { !$0.isProposal }.compactMap(\.group))
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
+    func notes(inGroup group: String) -> [Note] {
+        (index?.notes ?? []).filter { $0.group == group && !$0.isProposal }
+    }
+
+    func groupColor(_ group: String) -> String { Groups.color(group, config: config) }
+
+    /// The note's colour on the graph when it isn't its layer colour: pack colour, or its group's (core stays core).
+    func dotHex(_ note: Note) -> String? {
+        note.pack?.color ?? (note.layer == .core ? nil : note.group.map(groupColor))
+    }
+
+    private var groupColors: [String: String] {
+        Dictionary(uniqueKeysWithValues: groups.map { ($0, groupColor($0)) })
+    }
+
+    func setGroup(_ note: Note, _ name: String?) {
+        let group = name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let group, !group.isEmpty else {
+            perform("Removed “\(note.title)” from its group") { try Groups.assign(note, to: nil) }
+            return
+        }
+        if !groups.contains(group) && config.groupColors[group] == nil {
+            config.groupColors[group] = Groups.nextColor(existing: groups, config: config)
+            try? config.save(vault: vaultURL)
+        }
+        perform("Moved “\(note.title)” to \(group)") { try Groups.assign(note, to: group) }
+    }
+
+    /// Recolours live while the colour panel is dragged; the config file is written once it settles.
+    func setGroupColor(_ group: String, _ hex: String) {
+        config.groupColors[group] = hex
+        js("Cortex.setGroupColors(\(encode(groupColors)))")
+        groupColorSave?.cancel()
+        groupColorSave = Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            config.groupColors[group] = hex // a vault reload during the wait re-read the old colour from disk
+            try? config.save(vault: vaultURL)
+        }
     }
 
     // MARK: Loading & live sync
@@ -226,7 +275,7 @@ final class AppModel {
 
     private func pushGraph() {
         guard graphReady, let index else { return }
-        js("Cortex.setGraph(\(encode(index.graph())))")
+        js("Cortex.setGraph(\(encode(index.graph(groupColors: groupColors))))")
         if timelineActive { setTimeline(timelineDate) }
     }
 
