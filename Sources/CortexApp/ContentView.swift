@@ -43,6 +43,14 @@ struct ContentView: View {
             .navigationTitle("Cortex")
             .navigationSubtitle(model.status)
             .toolbar {
+                ToolbarItem {
+                    Button { QuickCapture.shared.toggle() } label: { Label("Quick Capture", systemImage: "plus.bubble") }
+                        .help("Get a thought down (⌃⌥N from anywhere)")
+                }
+                ToolbarItem {
+                    Button { model.toggle(.chat) } label: { Label("Chat", systemImage: "bubble.left.and.text.bubble.right") }
+                        .help("Ask your memory through your connected agent")
+                }
                 ToolbarItem { PersonaMenu(model: model) }
                 ToolbarItem {
                     Toggle(isOn: $model.timelineActive) { Label("Timeline", systemImage: "clock.arrow.circlepath") }
@@ -122,6 +130,25 @@ private struct Sidebar: View {
                                 Text("\(notes.count)").foregroundStyle(.secondary).monospacedDigit()
                             }
                         }
+                    }
+                }
+            }
+
+            if !model.decisions.isEmpty {
+                Section("Decisions") {
+                    ForEach(model.decisions) { note in
+                        HStack(spacing: 8) {
+                            LayerDot(layer: note.layer, size: 6, hex: model.dotHex(note))
+                            Text(note.title).lineLimit(1)
+                            if let revisit = note.revisit {
+                                Spacer()
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.caption2)
+                                    .foregroundStyle(revisit <= Date() ? Color(hex: model.style.recallColor) : .secondary)
+                                    .help("Revisit on \(revisit.formatted(date: .abbreviated, time: .omitted))")
+                            }
+                        }
+                        .tag(note.id)
                     }
                 }
             }
@@ -342,6 +369,9 @@ private struct InspectorContainer: View {
             Group {
                 switch model.panel {
                 case .note: NoteInspector(model: model)
+                case .chat: ChatPanel(model: model)
+                case .today: TodayPanel(model: model)
+                case .tasks: TasksPanel(model: model)
                 case .connect: ConnectPanel(model: model)
                 case .library: LibraryPanel(model: model)
                 case .activity: ActivityPanel(model: model)

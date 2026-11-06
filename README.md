@@ -76,7 +76,18 @@ Cortex works with any folder of Markdown files and reads `[[wikilinks]]` like Ob
 | everything else | **Memory**: recalled when relevant |
 | `layer: core` | Overrides the folder rule for one note |
 | `privacy: private` | Never shared with any AI |
+| `type: decision` | A decision with its reasoning; listed under Decisions in the sidebar |
+| `revisit: 2027-01-15` | Brings the note back in Today on that day |
 | `group: Name` | Clusters the note with its group in a coloured sector of the graph (one group per note; set it from the note inspector) |
+
+## Beyond the graph
+
+- **Chat**: ask your memory from inside Cortex. The answer comes from Claude Code or Codex, whichever you're signed in to, on the subscription you already have. It names its sources, what it looks up lights up on the graph, and it can only reach Cortex: no shell, no other files, no private notes. Chats stay out of your notes until you press Save to memory.
+- **Today**: a few notes that come back on their own: ones you asked to revisit, and old ones close to what you're working on now.
+- **Quick Capture**: press ⌃⌥N in any app (or ⌘N in Cortex). Related notes and a likely folder appear as you type.
+- **Decisions**: log what you decided, why, and when to look at it again. AI tools can propose decisions too.
+- **Tasks**: every open `- [ ]` in your vault in one list, without setup. Ticking one ticks it in its note. Add `📅 2026-12-01` to give it a date.
+- **What your AI actually uses**: the Health panel shows which notes AI tools really read, and which they never touch.
 
 ## Packs and personas
 

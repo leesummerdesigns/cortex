@@ -13,11 +13,14 @@ final class AppModel {
     var isLoading = true
 
     enum Panel: String, CaseIterable, Identifiable {
-        case note, connect, library, activity, health, style
+        case note, chat, today, tasks, connect, library, activity, health, style
         var id: String { rawValue }
         var title: String {
             switch self {
             case .note: "Note"
+            case .chat: "Chat"
+            case .today: "Today"
+            case .tasks: "Tasks"
             case .connect: "Connect"
             case .library: "Packs"
             case .activity: "Activity"
@@ -28,6 +31,9 @@ final class AppModel {
         var icon: String {
             switch self {
             case .note: "doc.text"
+            case .chat: "bubble.left.and.text.bubble.right"
+            case .today: "sun.max"
+            case .tasks: "checklist"
             case .connect: "link"
             case .library: "shippingbox"
             case .activity: "waveform.path.ecg"
@@ -36,6 +42,9 @@ final class AppModel {
             }
         }
     }
+
+    @ObservationIgnored let chat = ChatController()
+    var review = ReviewState()
 
     var selectedID: String?
     var showInspector = false
@@ -113,6 +122,68 @@ final class AppModel {
         (index?.notes ?? []).filter { $0.layer == layer && !$0.isProposal }
     }
 
+    // MARK: Today, tasks, usage
+
+    var decisions: [Note] {
+        (index?.notes ?? []).filter { $0.isDecision && !$0.isProposal }.sorted { $0.created > $1.created }
+    }
+
+    var todayItems: [ResurfaceItem] {
+        index.map { Resurface.today(index: $0, state: review) } ?? []
+    }
+
+    func markReviewed(_ item: ResurfaceItem) {
+        hide(item, days: 90)
+        if case .revisitDue = item.reason { setRevisit(item.note, nil) }
+    }
+
+    func snooze(_ item: ResurfaceItem) {
+        hide(item, days: 14)
+        if case .revisitDue = item.reason {
+            setRevisit(item.note, Calendar.current.date(byAdding: .day, value: 14, to: Date()))
+        }
+    }
+
+    private func hide(_ item: ResurfaceItem, days: Int) {
+        review.hiddenUntil[item.id] = Calendar.current.date(byAdding: .day, value: days, to: Date())
+        do { try review.save(vault: vaultURL) } catch { status = "Could not save: \(error.localizedDescription)" }
+    }
+
+    /// Asks for the note to come back in Today on that day (nil: never).
+    func setRevisit(_ note: Note, _ date: Date?) {
+        let message = date.map { "“\(note.title)” comes back on \($0.formatted(date: .abbreviated, time: .omitted))" } ?? "“\(note.title)” won't come back"
+        perform(message) {
+            let text = try String(contentsOf: note.url, encoding: .utf8)
+            try Parser.settingFrontmatter(text, key: "revisit", value: date.map(Capture.day))
+                .write(to: note.url, atomically: true, encoding: .utf8)
+        }
+    }
+
+    func complete(_ task: VaultTask) {
+        guard let note = index?.note(task.noteID) else { return }
+        perform("Done: \(task.text)") { try Tasks.complete(task, in: note) }
+    }
+
+    func askAbout(_ note: Note) {
+        panel = .chat
+        showInspector = true
+        chat.prepare()
+        chat.newChat()
+        chat.send("What's in my note “\(note.title)”, and is it still useful for what I'm working on now?")
+    }
+
+    var usage: UsageReport {
+        Usage.report(events: ActivityLog.read(from: 0).events, notes: index?.notes ?? [], vault: vaultURL)
+    }
+
+    /// Lights these notes up on the graph, the way a recall does.
+    func showUsage(_ ids: [String], label: String) {
+        recallSource = label
+        lastQuery = "\(ids.count) notes"
+        hits = ids.map { Hit(id: $0, score: 1) }
+        js("Cortex.recall(\(encode(hits)))")
+    }
+
     // MARK: Groups
 
     var groups: [String] {
@@ -165,6 +236,8 @@ final class AppModel {
 
     func load() async {
         isLoading = true
+        chat.model = self
+        QuickCapture.shared.install(model: self)
         if !FileManager.default.fileExists(atPath: vaultURL.path) { try? Vault.createStarter(at: vaultURL) }
         installHelper()
         refreshConnections()
@@ -194,6 +267,7 @@ final class AppModel {
         do {
             signature = Vault.signature(url)
             config = CortexConfig.load(vault: url)
+            review = ReviewState.load(vault: url)
             installedPacks = Packs.installed(vault: url)
             let notes = try await Task.detached { try Vault.load(url) }.value
             let index = Index(notes: notes, vault: url)
@@ -424,7 +498,7 @@ final class AppModel {
         }
     }
 
-    private func perform(_ message: String, _ action: () throws -> Void) {
+    func perform(_ message: String, _ action: () throws -> Void) {
         do {
             try action()
             status = message
@@ -630,7 +704,12 @@ final class AppModel {
         }
     }
 
-    var helperPath: String { (stableHelper ?? bundledHelper).path }
+    /// The stable copy, else the one in the bundle, else (run from source) the one built next to the app.
+    var helperPath: String {
+        if let stableHelper { return stableHelper.path }
+        if FileManager.default.fileExists(atPath: bundledHelper.path) { return bundledHelper.path }
+        return Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("cortex").path ?? bundledHelper.path
+    }
 
     func refreshConnections() {
         let fm = FileManager.default
@@ -765,6 +844,8 @@ final class AppModel {
             recall()
         case "open":
             select(value("id"))
+        case "capture":
+            QuickCapture.shared.show(text: value("text") ?? "")
         default:
             break
         }

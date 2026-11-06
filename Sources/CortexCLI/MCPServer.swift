@@ -118,7 +118,11 @@ final class MCPServer {
                 throw RPCError(code: -32602, message: "title and content are required")
             }
             let tags = (args["tags"] as? [String]) ?? []
-            let url = try Proposals.propose(title: title, content: content, tags: tags, source: client, vault: vault)
+            let decision = (args["kind"] as? String)?.lowercased() == "decision"
+                ? Capture.Decision(why: args["why"] as? String ?? "", alternatives: args["alternatives"] as? String ?? "",
+                                   revisit: (args["revisit"] as? String).flatMap(Parser.date))
+                : nil
+            let url = try Proposals.propose(title: title, content: content, tags: tags, decision: decision, source: client, vault: vault)
             ActivityLog.append(ActivityEvent(client: client, kind: .remember, query: title, note: url.lastPathComponent, vault: vault))
             return "Saved “\(title)” as a proposal in \(url.deletingLastPathComponent().lastPathComponent)/. The user will review it in Cortex before it becomes memory."
 
@@ -161,6 +165,7 @@ final class MCPServer {
             \(active.map { " and the active persona (\($0.manifest.name))" } ?? ""). \
             Call recall before answering anything that may depend on the user's projects, history, preferences or knowledge. \
             Use remember to propose durable new facts; the user reviews proposals before they become memory. \
+            When the user makes a decision, save it with remember and kind “decision”, including why they chose it. \
             If the user asks for a different persona or style (e.g. “be my editor”, “coach me”), call switch_persona.
             """
     }
@@ -250,13 +255,17 @@ final class MCPServer {
         ],
         [
             "name": "remember",
-            "description": "Propose a new durable memory (a decision, preference, fact or learning). It is saved as a proposal; the user reviews it in Cortex. Keep it atomic: one idea per memory.",
+            "description": "Propose a new durable memory (a decision, preference, fact or learning). It is saved as a proposal; the user reviews it in Cortex. Keep it atomic: one idea per memory. For a decision, set kind to “decision” and say why it was made, so the reasoning isn't lost.",
             "inputSchema": [
                 "type": "object",
                 "properties": [
                     "title": ["type": "string", "description": "Short descriptive title."],
                     "content": ["type": "string", "description": "The memory in Markdown."],
                     "tags": ["type": "array", "items": ["type": "string"]],
+                    "kind": ["type": "string", "enum": ["note", "decision"], "description": "“decision” logs the reasoning. Default: note."],
+                    "why": ["type": "string", "description": "For a decision: why it was made."],
+                    "alternatives": ["type": "string", "description": "For a decision: what else was considered."],
+                    "revisit": ["type": "string", "description": "For a decision: the day to look at it again, as yyyy-MM-dd."],
                 ],
                 "required": ["title", "content"],
             ],

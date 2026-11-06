@@ -65,7 +65,8 @@ public enum Vault {
         var latest = 0.0
         func visit(_ dir: URL, options: FileManager.DirectoryEnumerationOptions) {
             guard let e = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: [.contentModificationDateKey], options: options) else { return }
-            for case let url as URL in e where ["md", "json"].contains(url.pathExtension) {
+            // Ticking a note off in Today changes nothing the index reads, so it must not redraw the graph.
+            for case let url as URL in e where ["md", "json"].contains(url.pathExtension) && url.lastPathComponent != ReviewState.fileName {
                 count += 1
                 let m = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate?.timeIntervalSince1970 ?? 0
                 latest = max(latest, m)

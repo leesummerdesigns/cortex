@@ -177,6 +177,14 @@ public final class Index {
         return (out, back, similar)
     }
 
+    /// How close two notes are: their similarity, or a fixed strong value when one links to the other.
+    public func closeness(_ a: String, _ b: String) -> Double? {
+        guard a != b else { return nil }
+        if manualLinks.contains(where: { ($0.source == a && $0.target == b) || ($0.source == b && $0.target == a) }) { return 0.5 }
+        guard let va = vectors[a], let vb = vectors[b] else { return nil }
+        return Double(Vector.dot(va, vb))
+    }
+
     /// Hybrid recall: keyword relevance + semantic similarity, scores normalised to 0…1.
     /// `forAI` hides private notes and pending proposals (what AI tools may see).
     public func recall(_ query: String, limit: Int = 8, forAI: Bool = false) -> [Hit] {

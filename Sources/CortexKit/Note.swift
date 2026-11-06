@@ -50,6 +50,10 @@ public struct Note: Identifiable, Sendable {
     /// Written by an AI tool and waiting for the user's review.
     public var isProposal: Bool { status?.lowercased() == "proposal" }
     public var source: String? { frontmatter["source"]?.string }
+    /// A decision logged with its reasoning (`type: decision`).
+    public var isDecision: Bool { frontmatter["type"]?.string?.lowercased() == "decision" }
+    /// The day this note asks to be looked at again (`revisit:`).
+    public var revisit: Date? { frontmatter["revisit"]?.string.flatMap(Parser.date) }
     /// The group this note clusters with on the graph (`group:`). Pack notes cluster by pack instead.
     public var group: String? {
         guard pack == nil, let group = frontmatter["group"]?.string?.trimmingCharacters(in: .whitespaces), !group.isEmpty

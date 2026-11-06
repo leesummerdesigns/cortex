@@ -204,6 +204,7 @@ struct HealthPanel: View {
                     .padding(.vertical, 6)
                 }
 
+                UsageSection(model: model, report: model.usage)
                 issueSection("Waiting for review", "AI-proposed memories", notes: health.proposals)
                 if !health.duplicates.isEmpty {
                     Section("Possible duplicates") {

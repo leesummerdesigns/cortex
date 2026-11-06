@@ -12,6 +12,12 @@ struct CortexApp: App {
         }
         .windowToolbarStyle(.unified)
         .defaultSize(width: 1480, height: 920)
+        .commands {
+            CommandGroup(replacing: .newItem) {
+                Button("Quick Capture") { QuickCapture.shared.toggle() }
+                    .keyboardShortcut("n")
+            }
+        }
     }
 }
 

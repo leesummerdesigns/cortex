@@ -70,6 +70,7 @@ struct NoteInspector: View {
             HStack(spacing: 14) {
                 if note.pack == nil {
                     GroupMenu(model: model, note: note)
+                    RevisitMenu(model: model, note: note)
                     Toggle(isOn: Binding(get: { note.isPrivate }, set: { model.setPrivate(note, $0) })) {
                         Text("Private")
                     }
@@ -124,6 +125,31 @@ struct NoteInspector: View {
     private func startEditing(_ note: Note) {
         draft = (try? String(contentsOf: note.url, encoding: .utf8)) ?? note.body
         isEditing = true
+    }
+}
+
+/// Asks for the note to come back in Today on a chosen day.
+private struct RevisitMenu: View {
+    @Bindable var model: AppModel
+    let note: Note
+
+    var body: some View {
+        Menu {
+            ForEach([(1, "week"), (4, "weeks"), (12, "weeks"), (26, "weeks")], id: \.0) { amount, unit in
+                Button("In \(amount) \(unit)") {
+                    model.setRevisit(note, Calendar.current.date(byAdding: .weekOfYear, value: amount, to: Date()))
+                }
+            }
+            if note.revisit != nil {
+                Divider()
+                Button("Never") { model.setRevisit(note, nil) }
+            }
+        } label: {
+            Text(note.revisit.map { "Revisit \($0.formatted(date: .abbreviated, time: .omitted))" } ?? "Revisit")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Bring this note back in Today on a chosen day.")
     }
 }
 
@@ -216,8 +242,10 @@ private struct ProposalBanner: View {
 }
 
 /// Lightweight block renderer: headings, bullets, quotes; inline Markdown via AttributedString.
-private struct MarkdownBody: View {
+struct MarkdownBody: View {
     let text: String
+    /// Finds the note a [[wikilink]] points to. Links become clickable when this is set.
+    var noteID: ((String) -> String?)? = nil
     @Environment(\.graphStyle) private var style
 
     var body: some View {
@@ -254,8 +282,21 @@ private struct MarkdownBody: View {
         }
     }
 
+    /// Turns [[Title]] into a Markdown link for each note that exists.
+    private func linked(_ s: String) -> String {
+        guard let noteID else { return s }
+        var out = s
+        for match in s.matches(of: #/\[\[([^\]\|]+)\]\]/#) {
+            let title = String(match.1).trimmingCharacters(in: .whitespaces)
+            guard let id = noteID(title),
+                  let encoded = id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) else { continue }
+            out = out.replacingOccurrences(of: String(match.0), with: "[\(title)](cortex://open?id=\(encoded))")
+        }
+        return out
+    }
+
     private func inline(_ s: String) -> Text {
-        let display = s.replacingOccurrences(of: #"\[\[([^\]\|]+)\|([^\]]+)\]\]"#, with: "**$2**", options: .regularExpression)
+        let display = linked(s).replacingOccurrences(of: #"\[\[([^\]\|]+)\|([^\]]+)\]\]"#, with: "**$2**", options: .regularExpression)
             .replacingOccurrences(of: #"\[\[([^\]]+)\]\]"#, with: "**$1**", options: .regularExpression)
         let attributed = (try? AttributedString(markdown: display, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(display)

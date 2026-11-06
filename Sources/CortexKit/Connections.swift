@@ -93,7 +93,7 @@ public struct Connections: Sendable {
 
     /// The `codex` CLI, if installed in one of the usual places.
     public var codexCLI: URL? {
-        ["/opt/homebrew/bin/codex", "/usr/local/bin/codex", "~/.local/bin/codex", "/Applications/Codex.app/Contents/Resources/codex"]
+        ["/Applications/Codex.app/Contents/Resources/codex-cli/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex", "~/.local/bin/codex", "/Applications/Codex.app/Contents/Resources/codex"]
             .map { URL(fileURLWithPath: $0.replacingOccurrences(of: "~", with: home.path)) }
             .first { FileManager.default.isExecutableFile(atPath: $0.path) }
     }
