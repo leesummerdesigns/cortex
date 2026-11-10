@@ -509,7 +509,8 @@ function drawLabels() {
     const w = ctx.measureText(str).width, h = size * S.labelSize * 1.25;
     const bx = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
     const box = { x: bx - 3, y: y - h / 2 - 2, w: w + 6, h: h + 4 };
-    if (!force && !free(box)) return false;
+    const onScreen = box.x >= 0 && box.y >= 0 && box.x + box.w <= W && box.y + box.h <= H;
+    if (!force && (!free(box) || !onScreen)) return false;
     placed.push(box);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = color;
@@ -575,6 +576,12 @@ function drawLabels() {
   }
 
   const candidates = nodes.filter((n) => visible(n) && n.x != null && wantsLabel(n)).sort((a, b) => labelPriority(a) - labelPriority(b));
+  // Labels keep clear of the dots that matter most right now: the recall's hits and the core.
+  for (const n of nodes) {
+    if (!visible(n) || n.x == null || !(hits.has(n.id) || n.layer === 'core')) continue;
+    const [x, y] = toScreen(n.x, n.y), r = radius(n) * view.k + 1; // stays clear of its own label, 6px away
+    placed.push({ x: x - r, y: y - r, w: r * 2, h: r * 2 });
+  }
   for (const n of candidates) {
     const [x, y] = toScreen(n.x, n.y);
     const r = radius(n) * view.k;
@@ -586,10 +593,14 @@ function drawLabels() {
     const short = title.length > 34 && !strong ? `${title.slice(0, 32)}…` : title;
     // Core labels point away from the centre; everything else sits to the right of its dot.
     const left = n.layer === 'core' && !isPersonaNote(n) && n.x < -1;
-    text(short, left ? x - r - 6 : x + r + 6, y, {
-      size: strong ? 12 : 11, weight: strong ? 600 : 500, color, align: left ? 'right' : 'left',
+    const style = {
+      size: strong ? 12 : 11, weight: strong ? 600 : 500, color,
       force: n === hovered || n === selected || (n.layer === 'core' && !hit), alpha: hit ? 1 : 1 - dim * 0.8,
-    });
+    };
+    // If the preferred side is taken, a hit's label tries the other side before giving up.
+    if (!text(short, left ? x - r - 6 : x + r + 6, y, { ...style, align: left ? 'right' : 'left' }) && hit) {
+      text(short, left ? x + r + 6 : x - r - 6, y, { ...style, align: left ? 'left' : 'right' });
+    }
   }
 }
 

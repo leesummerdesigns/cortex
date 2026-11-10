@@ -3,9 +3,11 @@
 <h1 align="center">Cortex</h1>
 
 <p align="center"><b>A second brain for your AI.</b><br>
-Your memories as plain Markdown files, shown as a living neural network, and available inside Claude, ChatGPT, Cursor and other AI apps.</p>
+Your memories as plain Markdown files, shown as a map you can read at a glance, and available inside Claude, ChatGPT, Cursor and other AI apps.</p>
 
 <p align="center"><a href="https://github.com/leesummerdesigns/cortex/releases/latest/download/Cortex.zip"><b>Download for Mac</b></a> · macOS 15 or later · Apple Silicon and Intel · free and open source</p>
+
+<p align="center"><img src=".github/map.jpg" width="900" alt="The Cortex memory map: core notes in the centre, the persona ring around them, and groups such as Career, Finances and Travel as coloured nebulas"></p>
 
 ---
 
@@ -18,6 +20,9 @@ Every AI chat starts from zero. Cortex gives your AI a memory that you own: a fo
 - **Personas and packs.** Switch how your AI works with you (finance guide, devil's advocate, language tutor, chief of staff, …) or add knowledge packs. Make your own and share them as a folder.
 - **You review what the AI remembers.** When an AI wants to save something, it lands in your inbox as a proposal. Accept or discard it in Cortex.
 - **Recall theater, timeline, health.** See what your AI just looked up, replay how your memory grew, and find orphaned or stale notes.
+
+<p align="center"><img src=".github/map-recall.jpg" width="900" alt="A recall on the map: the notes an AI used light up in lime, with signals running between them, while the rest of the map fades back"></p>
+<p align="center"><sub>When an AI recalls something, the notes it used light up and the rest of the map steps back.</sub></p>
 
 ## Install
 
