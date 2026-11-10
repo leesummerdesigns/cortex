@@ -12,7 +12,7 @@ Your memories as plain Markdown files, shown as a living neural network, and ava
 Every AI chat starts from zero. Cortex gives your AI a memory that you own: a folder of Markdown notes on your Mac (an Obsidian vault works as is). Cortex reads it, finds how your notes connect, and lets every AI app you use recall from it.
 
 - **Your files, your Mac.** Notes stay plain `.md` files. Search and connections run on-device with Apple's language models. Nothing leaves your Mac unless you turn on the Bridge.
-- **A graph you want to look at.** Every note is a sphere, every link a line, and you can watch pulses travel along them when an AI recalls something. Colors, glow, line shape and more are adjustable.
+- **A map you understand at a glance.** Your core sits in the middle, ringed by your persona. Groups like Finances or Career gather in their own nebulas, and context, memory and installed packs lie on rings further out. When an AI recalls something, the notes it used light up. Colours, spacing and labels are adjustable.
 - **Works inside your AI.** One click connects Claude Desktop, Claude Code, Cursor and Codex through MCP. The Bridge adds Claude and ChatGPT on the web and on your phone.
 - **Core memory.** Notes in `00 Core` (who you are, how you want answers) are loaded at the start of every conversation.
 - **Personas and packs.** Switch how your AI works with you (finance guide, devil's advocate, language tutor, chief of staff, …) or add knowledge packs. Make your own and share them as a folder.
@@ -149,7 +149,7 @@ cd cortex && scripts/build-app.sh
 
 The app is written to `build/Cortex.app`. Run the tests with `swift test`.
 
-The project has three parts: `CortexKit` (vault parsing, embeddings, recall, packs, connections), `CortexApp` (the SwiftUI app) and `CortexCLI` (the `cortex` helper with the MCP server and the Bridge). The graph is a three.js page in [`web/`](web) shown in a web view.
+The project has three parts: `CortexKit` (vault parsing, embeddings, recall, packs, connections), `CortexApp` (the SwiftUI app) and `CortexCLI` (the `cortex` helper with the MCP server and the Bridge). The map is a canvas page in [`web/`](web) shown in a web view.
 
 ## Creator
 

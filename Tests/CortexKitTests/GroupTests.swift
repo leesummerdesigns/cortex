@@ -51,3 +51,13 @@ private func note(_ id: String, group: String?, url: URL = URL(fileURLWithPath: 
     #expect(payload.nodes.first { $0.id == "b" }?.group == nil)
     #expect(payload.groups == ["G": "#ff0000"])
 }
+
+@Test func mapCarriesPersonasForTheRing() throws {
+    let personas = [GraphPersona(id: "finance-guide", name: "Finance Guide", active: true),
+                    GraphPersona(id: "socratic-coach", name: "Socratic Coach", active: false)]
+    let payload = Index(notes: [note("a", group: nil)]).graph(personas: personas)
+    #expect(payload.personas == personas)
+    let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(payload)) as? [String: Any]
+    let first = (json?["personas"] as? [[String: Any]])?.first
+    #expect(first?["name"] as? String == "Finance Guide" && first?["active"] as? Bool == true)
+}

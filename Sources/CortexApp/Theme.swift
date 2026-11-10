@@ -2,8 +2,6 @@ import CortexKit
 import SwiftUI
 
 enum Theme {
-    static let field = Color(red: 0.15, green: 0.145, blue: 0.14)   // #262524, behind the web view
-
     static func name(_ layer: Layer) -> String {
         switch layer {
         case .core: "Core"

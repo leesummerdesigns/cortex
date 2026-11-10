@@ -200,9 +200,10 @@ final class AppModel {
 
     func groupColor(_ group: String) -> String { Groups.color(group, config: config) }
 
-    /// The note's colour on the graph when it isn't its layer colour: pack colour, or its group's (core stays core).
+    /// The note's colour on the map when it isn't its layer colour: the persona's, or its group's (core stays core).
     func dotHex(_ note: Note) -> String? {
-        note.pack?.color ?? (note.layer == .core ? nil : note.group.map(groupColor))
+        if note.pack != nil { return note.layer == .core ? style.personaColor : nil }
+        return note.layer == .core ? nil : note.group.map(groupColor)
     }
 
     private var groupColors: [String: String] {
@@ -352,7 +353,9 @@ final class AppModel {
 
     private func pushGraph() {
         guard graphReady, let index else { return }
-        js("Cortex.setGraph(\(encode(index.graph(groupColors: groupColors))))")
+        let personas = installedPacks.filter { $0.manifest.kind == .persona }
+            .map { GraphPersona(id: $0.id, name: $0.manifest.name, active: $0.id == config.activePersona) }
+        js("Cortex.setGraph(\(encode(index.graph(groupColors: groupColors, personas: personas))))")
         if timelineActive { setTimeline(timelineDate) }
     }
 

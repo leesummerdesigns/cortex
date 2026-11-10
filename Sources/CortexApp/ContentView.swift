@@ -11,7 +11,7 @@ struct ContentView: View {
         } detail: {
             HStack(spacing: 0) {
             ZStack {
-                Theme.field
+                Color(hex: model.style.background)
                 GraphView(model: model)
                     .clipped()
                 if model.isLoading {

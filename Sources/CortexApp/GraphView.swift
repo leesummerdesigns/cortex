@@ -1,7 +1,7 @@
 import SwiftUI
 import WebKit
 
-/// Hosts the three.js graph (web/index.html) and relays its messages to the model.
+/// Hosts the 2D memory map (web/index.html) and relays its messages to the model.
 struct GraphView: NSViewRepresentable {
     let model: AppModel
 
@@ -48,6 +48,7 @@ struct GraphView: NSViewRepresentable {
                 switch type {
                 case "ready": model.graphDidLoad()
                 case "select": model.select(body["id"] as? String)
+                case "persona": if let id = body["id"] as? String { model.setPersona(id) }
                 case "log": print("[graph] \(body["message"] ?? "")")
                 default: break
                 }

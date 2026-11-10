@@ -5,10 +5,7 @@
     "build": "esbuild src/graph.js --bundle --minify --format=iife --outfile=dist/graph.js"
   },
   "dependencies": {
-    "3d-force-graph": "1.80.1",
     "d3-force-3d": "3.0.6",
-    "esbuild": "0.28.2",
-    "three": "0.186.1",
-    "three-spritetext": "1.10.0"
+    "esbuild": "0.28.2"
   }
 }

@@ -3,8 +3,8 @@ import Foundation
 /// Groups gather related notes into one coloured cluster on the graph.
 /// Membership is the note's `group:` frontmatter (one group per note); colours live in the vault config.
 public enum Groups {
-    /// Distinct from the layer colours and readable on dark and light backgrounds.
-    public static let palette = ["#4fb3bf", "#e0a458", "#9b7ede", "#6cc070", "#e07a9f", "#5b8def", "#d4c45a", "#ef7d57"]
+    /// Nebula colours: apart from the core's lime and the persona's violet, readable on the dark map.
+    public static let palette = ["#4fc3d9", "#ef86ad", "#f0b65a", "#6fd3a0", "#7d9bff", "#e8875a", "#a3b8d9", "#d8d36a"]
 
     /// The saved colour, else a palette colour derived from the name (stable for groups typed in another editor).
     public static func color(_ group: String, config: CortexConfig) -> String {

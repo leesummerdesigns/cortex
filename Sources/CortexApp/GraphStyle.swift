@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Every visual parameter of the graph. Sent to the web view as JSON (keys match graph.js `S`).
+/// Every visual parameter of the memory map. Sent to the web view as JSON (keys match graph.js `S`).
 struct GraphStyle: Codable, Equatable {
     enum LabelMode: String, Codable, CaseIterable {
         case none, core, context, all
@@ -14,77 +14,58 @@ struct GraphStyle: Codable, Equatable {
         }
     }
 
-    // Spheres
-    var coreColor = "#f3e9df"
-    var contextColor = "#e5484d"
-    var memoryColor = "#b8a397"
-    var orphanColor = "#5e463c"
-    var recallColor = "#ffc21a"
-    var packColor = "#5b9bd5"    // fallback for packs without their own colour
-    var nodeSize = 1.0
-    var nodeOpacity = 1.0
+    var background = "#242834"
 
-    // Material
-    var gloss = 70.0          // Phong shininess: sharpness of the highlight
-    var reflection = 0.35     // specular strength
-    var glow = 0.0            // halo opacity
-    var glowSize = 4.0        // halo radius in node radii
-    var groupGlow = 0.35      // opacity of the coloured cloud behind each group's cluster
+    // Notes
+    var coreColor = "#b6ff00"
+    var personaColor = "#7d53ff"
+    var contextColor = "#e9ecf2"
+    var memoryColor = "#7a8195"
+    var orphanColor = "#4a5063"
+    var recallColor = "#b6ff00"
+    var packColor = "#9aa1b5"
+    var nodeSize = 1.0
+
+    // Groups
+    var nebula = 1.0          // strength of each group's tinted area
 
     // Lines
-    var manualLinkColor = "#eb5458"
-    var autoLinkColor = "#a0b6b4"
-    var manualLinkOpacity = 0.85
-    var autoLinkOpacity = 0.5
-    var lineWidth = 0.2       // 0 = 1px hairline
-    var curvature = 0.0
+    var manualLinkColor = "#e9ecf2"
+    var autoLinkColor = "#e9ecf2"
+    var manualLinkOpacity = 0.22
+    var autoLinkOpacity = 0.04
     var showAutoLinks = true
 
-    // Pulses: small signals travelling along random lines
-    var pulseRate = 6.0       // pulses per second across the whole network
-    var pulseSize = 1.2
-    var pulseSpeed = 0.01
-    var pulseColor = "#f3e9df"
+    // Impulses: small signals travelling along the lines
+    var pulseRate = 5.0       // per second across the whole map
+    var pulseColor = "#e9ecf2"
 
-    // Labels
+    // Labels & layout
     var labels = LabelMode.context
     var labelSize = 1.0
-
-    // Background & motion
-    var backgroundInner = "#3a3938"
-    var backgroundOuter = "#141414"
-    var rotation = 0.3
     var spread = 1.0
 
     static let presets: [(name: String, style: GraphStyle)] = [
-        ("Coral", GraphStyle()),
-        ("Calcium", {
+        ("Signal", GraphStyle()),
+        ("Graphite", {
             var s = GraphStyle()
-            s.coreColor = "#ffc983"; s.contextColor = "#b9c6cf"; s.memoryColor = "#5d6d7b"; s.orphanColor = "#2c343c"
-            s.recallColor = "#7dffa8"; s.gloss = 10; s.reflection = 0.05; s.glow = 0.6; s.glowSize = 6
-            s.manualLinkColor = "#e8d6ba"; s.autoLinkColor = "#78aac8"; s.manualLinkOpacity = 0.4; s.autoLinkOpacity = 0.18
-            s.lineWidth = 0; s.labels = .core; s.backgroundInner = "#0b1016"; s.backgroundOuter = "#020304"; s.pulseColor = "#7dffa8"; s.pulseRate = 10
-            return s
-        }()),
-        ("Blueprint", {
-            var s = GraphStyle()
-            s.coreColor = "#ffffff"; s.contextColor = "#7cc4ff"; s.memoryColor = "#3f6c99"; s.orphanColor = "#24405e"
-            s.recallColor = "#ff8a3d"; s.gloss = 20; s.reflection = 0.15
-            s.manualLinkColor = "#9fd3ff"; s.autoLinkColor = "#5b88b5"; s.manualLinkOpacity = 0.7; s.autoLinkOpacity = 0.35
-            s.lineWidth = 0.1; s.curvature = 0.25; s.backgroundInner = "#173356"; s.backgroundOuter = "#06101d"
+            s.background = "#16181d"; s.coreColor = "#f2f2f2"; s.personaColor = "#9a9fad"; s.contextColor = "#c9ccd4"
+            s.memoryColor = "#5d626e"; s.orphanColor = "#383b44"; s.recallColor = "#b6ff00"; s.packColor = "#7c818d"
+            s.nebula = 0.7; s.manualLinkColor = "#c9ccd4"; s.autoLinkColor = "#c9ccd4"
             return s
         }()),
         ("Paper", {
             var s = GraphStyle()
-            s.coreColor = "#1d1d1f"; s.contextColor = "#d23c3c"; s.memoryColor = "#8c8279"; s.orphanColor = "#c9c0b6"
-            s.recallColor = "#2f6bff"; s.gloss = 40; s.reflection = 0.2
-            s.manualLinkColor = "#d23c3c"; s.autoLinkColor = "#6f6a65"; s.manualLinkOpacity = 0.6; s.autoLinkOpacity = 0.3
-            s.lineWidth = 0.12; s.backgroundInner = "#f7f3ee"; s.backgroundOuter = "#d8d0c6"
+            s.background = "#f4f2ee"; s.coreColor = "#242834"; s.personaColor = "#7d53ff"; s.contextColor = "#3b4050"
+            s.memoryColor = "#9a9ea8"; s.orphanColor = "#c9c8c3"; s.recallColor = "#5a8f00"; s.packColor = "#8a8f9a"
+            s.manualLinkColor = "#242834"; s.autoLinkColor = "#242834"; s.manualLinkOpacity = 0.25; s.autoLinkOpacity = 0.06
+            s.pulseColor = "#3b4050"
             return s
         }()),
     ]
 
-    private static let defaultsKey = "graphStyle"
+    /// New key for the 2D map: settings saved for the old 3D graph would bring its colours back.
+    private static let defaultsKey = "mapStyle"
 
     static func load() -> GraphStyle {
         // Merge saved values over the defaults, so settings survive when new parameters are added.

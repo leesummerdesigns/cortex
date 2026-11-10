@@ -1,23 +1,22 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Cortex Graph</title>
+<title>Cortex Map</title>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; }
-  body { background: radial-gradient(ellipse 90% 80% at 45% 35%, #3a3938 0%, #262524 45%, #141414 100%); }
-  #graph { width: 100%; height: 100%; }
-  .scene-tooltip { pointer-events: none; }
+  body { background: #242834; }
+  #graph { position: relative; width: 100%; height: 100%; }
+  canvas { display: block; }
   .tip {
-    font: 12px/1.35 -apple-system, "SF Pro Text", sans-serif;
-    font-family: "SF Mono", Menlo, monospace;
-    background: rgba(8, 8, 8, 0.94);
-    border-radius: 0;
-    padding: 6px 9px;
-    color: #e8e2dc;
-    display: flex; flex-direction: column; gap: 2px;
+    position: absolute; display: none; pointer-events: none;
+    flex-direction: column; gap: 3px; max-width: 280px;
+    font: 12px/1.35 -apple-system, "SF Pro Text", system-ui, sans-serif;
+    background: #1b1e27; border: 1px solid #3a3f4e; border-radius: 6px;
+    padding: 7px 10px; color: #e9ecf2;
   }
-  .tip span { color: #8a817b; font-size: 10px; }
+  .tip b { font-weight: 600; }
+  .tip span { color: #8a90a2; font-size: 11px; }
 </style>
 </head>
 <body>

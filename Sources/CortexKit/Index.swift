@@ -29,6 +29,20 @@ public struct GraphPayload: Codable, Sendable {
     public let links: [GraphLink]
     /// Group name → hex colour.
     public let groups: [String: String]
+    /// Installed personas for the ring around the core; the active one is filled.
+    public let personas: [GraphPersona]
+}
+
+public struct GraphPersona: Codable, Sendable, Equatable {
+    public let id: String
+    public let name: String
+    public let active: Bool
+
+    public init(id: String, name: String, active: Bool) {
+        self.id = id
+        self.name = name
+        self.active = active
+    }
 }
 
 public struct Hit: Codable, Sendable, Hashable {
@@ -145,7 +159,7 @@ public final class Index {
         }
     }
 
-    public func graph(groupColors: [String: String] = [:]) -> GraphPayload {
+    public func graph(groupColors: [String: String] = [:], personas: [GraphPersona] = []) -> GraphPayload {
         let links = manualLinks + autoLinks
         var degree: [String: Int] = [:]
         for l in manualLinks { degree[l.source, default: 0] += 1; degree[l.target, default: 0] += 1 }
@@ -154,7 +168,7 @@ public final class Index {
                       created: ($0.created.timeIntervalSince1970 * 1000).rounded(), color: $0.pack?.color,
                       pack: $0.pack?.name, group: $0.group, proposal: $0.isProposal, isPrivate: $0.isPrivate)
         }
-        return GraphPayload(nodes: nodes, links: links, groups: groupColors)
+        return GraphPayload(nodes: nodes, links: links, groups: groupColors, personas: personas)
     }
 
     public func note(_ id: String) -> Note? { byId[id] }
