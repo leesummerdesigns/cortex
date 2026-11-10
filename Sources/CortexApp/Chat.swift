@@ -115,13 +115,18 @@ final class ChatController {
         let runID = current.id
         // A session that never started has nothing to resume, so its first message counts again.
         let isFirst = current.session == nil
+        let active = CortexConfig.load(vault: model.vaultURL).activePersona
+        let personaSwitch = !isFirst && active != current.persona
+            ? AgentChat.personaSwitch(to: active.flatMap { id in Packs.installed(vault: model.vaultURL).first { $0.id == id } })
+            : nil
+        current.persona = active
         current.messages.append(ChatMessage(role: .user, text: text))
         current.messages.append(ChatMessage(role: .assistant, text: ""))
         current.updated = Date()
         thread = current
 
         let open = model.selectedNote.flatMap { $0.isPrivate || $0.isProposal ? nil : $0.title }
-        let prompt = AgentChat.prompt(text, isFirst: isFirst, openNote: open)
+        let prompt = AgentChat.prompt(text, isFirst: isFirst, openNote: open, personaSwitch: personaSwitch)
 
         let process = Process()
         process.executableURL = url
@@ -215,6 +220,10 @@ final class ChatController {
                 current.messages[last].text = AgentChat.friendlyError(lastError, agent: agent)
                 current.messages[last].failed = true
             }
+        }
+        // The agent may have switched persona itself ("be my editor"); it already has those instructions.
+        if current.messages[last].tools.contains(where: { $0.hasPrefix("switch_persona") }) {
+            current.persona = CortexConfig.load(vault: URL(fileURLWithPath: current.vault)).activePersona
         }
         current.updated = Date()
         thread = current

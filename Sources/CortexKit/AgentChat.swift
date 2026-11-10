@@ -61,7 +61,7 @@ public enum AgentChat {
     }
 
     /// What the agent receives. The instructions go along with the first message only; a resumed session has them.
-    public static func prompt(_ message: String, isFirst: Bool, openNote: String?) -> String {
+    public static func prompt(_ message: String, isFirst: Bool, openNote: String?, personaSwitch: String? = nil) -> String {
         var out = ""
         if isFirst {
             out += """
@@ -74,8 +74,21 @@ public enum AgentChat {
 
                 """
         }
+        if let personaSwitch { out += personaSwitch }
         if let openNote { out += "(The user has the note [[\(openNote)]] open right now.)\n\n" }
         return out + message
+    }
+
+    /// A resumed conversation loaded the persona with the core when it began. After the user switches persona in
+    /// the app, the next message has to carry the new instructions, or the agent keeps answering in the old voice.
+    public static func personaSwitch(to pack: InstalledPack?) -> String {
+        guard let pack else {
+            return "(The user just turned the persona off in Cortex. From this message on, drop any earlier persona "
+                + "and answer as yourself, guided only by their core memory.)\n\n"
+        }
+        let instructions = Packs.notes(of: pack).map(\.body).joined(separator: "\n\n")
+        return "(The user just switched the persona to “\(pack.manifest.name)” in Cortex. From this message on, "
+            + "follow these instructions instead of any earlier persona:\n\n\(instructions))\n\n"
     }
 
     /// Unwraps the JSON an API error sometimes arrives in, and says what to do about a missing sign-in.
@@ -210,6 +223,8 @@ public struct ChatThread: Codable, Sendable, Identifiable, Equatable {
     public var agent: ChatAgent
     public var vault: String
     public var session: String?
+    /// The persona the agent was last told about, so a switch in the app reaches a conversation already under way.
+    public var persona: String?
     public var messages: [ChatMessage] = []
     public var updated = Date()
 

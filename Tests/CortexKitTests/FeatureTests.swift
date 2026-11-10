@@ -88,6 +88,28 @@ private let days: TimeInterval = 86_400
     #expect(AgentChat.prompt("Hallo", isFirst: false, openNote: "X").contains("[[X]]"))
 }
 
+@Test func personaSwitchCarriesTheNewInstructions() throws {
+    let folder = try tempVault()
+    try "---\ntitle: Voice\n---\nBe blunt. Argue the other side.".write(to: folder.appendingPathComponent("Voice.md"), atomically: true, encoding: .utf8)
+    let pack = InstalledPack(manifest: PackManifest(id: "devils-advocate", name: "Devil's Advocate", author: "x",
+                                                    description: "", kind: .persona, color: "#000"), url: folder)
+    let switched = AgentChat.personaSwitch(to: pack)
+    #expect(switched.contains("Devil's Advocate"))
+    #expect(switched.contains("Be blunt. Argue the other side."))
+    #expect(!switched.contains("title: Voice"))
+    #expect(AgentChat.personaSwitch(to: nil).contains("turned the persona off"))
+
+    let prompt = AgentChat.prompt("Hallo", isFirst: false, openNote: nil, personaSwitch: switched)
+    #expect(prompt.hasPrefix(switched) && prompt.hasSuffix("Hallo"))
+}
+
+@Test func oldChatsWithoutAPersonaStillLoad() throws {
+    let json = #"{"id":"\#(UUID().uuidString)","agent":"claude","vault":"/v","messages":[],"updated":"2026-11-01T10:00:00Z"}"#
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .iso8601
+    #expect(try decoder.decode(ChatThread.self, from: Data(json.utf8)).persona == nil)
+}
+
 @Test func signInStatusIsRead() {
     #expect(!AgentChat.isSignedIn(.claude, output: #"{"loggedIn": false}"#, exitCode: 1))
     #expect(AgentChat.isSignedIn(.claude, output: #"{"loggedIn": true}"#, exitCode: 0))
