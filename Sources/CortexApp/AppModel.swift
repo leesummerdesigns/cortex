@@ -81,9 +81,12 @@ final class AppModel {
     enum BridgePhase: Equatable { case off, starting, online, failed(String) }
     var bridgePhase = BridgePhase.off
     var bridgeURL: String?
+    var bridgeAddressChanged = false
     var bridge = BridgeState()
     @ObservationIgnored private var bridgeServer: Process?
     @ObservationIgnored private var bridgeTunnel: Process?
+    @ObservationIgnored private var bridgeMetrics: String?
+    @ObservationIgnored private var bridgeWatchdog: Task<Void, Never>?
     private static let bridgePort = "7319"
 
     // Timeline
@@ -598,6 +601,7 @@ final class AppModel {
         UserDefaults.standard.set(true, forKey: "bridgeEnabled")
         bridgePhase = .starting
         bridgeURL = nil
+        bridgeAddressChanged = false
         // A tunnel left over from a crashed or killed Cortex would hold the port; only ours matches this pattern.
         let cleanup = Process()
         cleanup.executableURL = URL(fileURLWithPath: "/usr/bin/pkill")
@@ -605,6 +609,17 @@ final class AppModel {
         try? cleanup.run()
         cleanup.waitUntilExit()
 
+        do {
+            try launchBridgeTunnel(cloudflared)
+            try launchBridgeServer()
+            watchBridgeTunnel()
+        } catch {
+            stopBridge(remember: false)
+            bridgePhase = .failed(error.localizedDescription)
+        }
+    }
+
+    private func launchBridgeTunnel(_ cloudflared: URL) throws {
         let tunnel = Process()
         tunnel.executableURL = cloudflared
         tunnel.arguments = ["tunnel", "--url", "http://127.0.0.1:\(Self.bridgePort)", "--no-autoupdate"]
@@ -613,6 +628,10 @@ final class AppModel {
         tunnel.standardOutput = output
         output.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let text = String(data: handle.availableData, encoding: .utf8) ?? ""
+            if let range = text.range(of: #"(?<=Starting metrics server on )[0-9.]+:[0-9]+"#, options: .regularExpression) {
+                let metrics = String(text[range])
+                Task { @MainActor in self?.bridgeMetrics = metrics }
+            }
             guard let range = text.range(of: #"https://[a-z0-9-]+\.trycloudflare\.com"#, options: .regularExpression) else { return }
             let url = String(text[range])
             Task { @MainActor in
@@ -621,17 +640,68 @@ final class AppModel {
                 self?.status = "Bridge online — add \(url)/mcp as a connector on claude.ai"
             }
         }
+        // The watchdog starts a replacement; this only stops the panel from showing an address that is gone.
         tunnel.terminationHandler = { [weak self] p in
             Task { @MainActor in
                 guard let self, self.bridgeTunnel === p else { return }
-                self.stopBridge(remember: true)
-                self.bridgePhase = .failed("The tunnel stopped (exit \(p.terminationStatus)). Turn the Bridge on again to retry.")
+                self.bridgeURL = nil
+                self.bridgePhase = .starting
             }
         }
+        try tunnel.run()
+        bridgeTunnel = tunnel
+    }
+
+    /// A quick tunnel can lose its Cloudflare connections and its address while the process keeps running,
+    /// so an exit handler alone never notices. This polls cloudflared's own readiness endpoint.
+    private func watchBridgeTunnel() {
+        bridgeWatchdog?.cancel()
+        bridgeWatchdog = Task { [weak self] in
+            var watchdog = TunnelWatchdog()
+            while !Task.isCancelled {
+                try? await Task.sleep(for: TunnelWatchdog.interval)
+                guard let self, !Task.isCancelled else { return }
+                let running = self.bridgeTunnel?.isRunning == true
+                let ready = await Self.tunnelIsReady(metrics: self.bridgeMetrics)
+                let online = running && ready ? true : await Self.cloudflareIsReachable()
+                guard !Task.isCancelled else { return }
+                if watchdog.shouldReplace(running: running, ready: ready, online: online) { self.replaceBridgeTunnel() }
+            }
+        }
+    }
+
+    /// An unknown metrics address counts as ready: the watchdog should never replace a tunnel it cannot inspect.
+    private nonisolated static func tunnelIsReady(metrics: String?) async -> Bool {
+        guard let metrics, let url = URL(string: "http://\(metrics)/ready") else { return true }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 5
+        guard let (_, response) = try? await URLSession.shared.data(for: request) else { return false }
+        return (response as? HTTPURLResponse)?.statusCode == 200
+    }
+
+    private nonisolated static func cloudflareIsReachable() async -> Bool {
+        var request = URLRequest(url: URL(string: "https://www.cloudflare.com/cdn-cgi/trace")!)
+        request.timeoutInterval = 10
+        return (try? await URLSession.shared.data(for: request)) != nil
+    }
+
+    /// Swaps in a new tunnel and keeps the local server running. The new tunnel has a new public address.
+    private func replaceBridgeTunnel() {
+        guard let cloudflared else {
+            stopBridge(remember: false)
+            bridgePhase = .failed("Needs the free Cloudflare tunnel tool: run “brew install cloudflared” in Terminal.")
+            return
+        }
+        if let old = bridgeTunnel {
+            (old.standardError as? Pipe)?.fileHandleForReading.readabilityHandler = nil
+            if old.isRunning { kill(old.processIdentifier, SIGKILL) }
+        }
+        bridgeMetrics = nil
+        bridgeURL = nil
+        bridgePhase = .starting
+        bridgeAddressChanged = true
         do {
-            try tunnel.run()
-            bridgeTunnel = tunnel
-            try launchBridgeServer()
+            try launchBridgeTunnel(cloudflared)
         } catch {
             stopBridge(remember: false)
             bridgePhase = .failed(error.localizedDescription)
@@ -668,6 +738,10 @@ final class AppModel {
     func stopBridge(remember: Bool = true) {
         if remember { UserDefaults.standard.set(false, forKey: "bridgeEnabled") }
         let (server, tunnel) = (bridgeServer, bridgeTunnel)
+        bridgeWatchdog?.cancel()
+        bridgeWatchdog = nil
+        bridgeMetrics = nil
+        bridgeAddressChanged = false
         bridgeServer = nil
         bridgeTunnel = nil
         (tunnel?.standardError as? Pipe)?.fileHandleForReading.readabilityHandler = nil

@@ -62,7 +62,7 @@ The Bridge makes your memory reachable from other devices while your Mac is awak
 brew install cloudflared
 ```
 
-Each device must be approved with the pairing code shown in Cortex, and you can revoke devices at any time. Two current limits: the address changes when the Bridge restarts (you re-add the connector), and claude.ai shows Cloudflare's cloud icon for the connector because the address is on Cloudflare's shared tunnel domain.
+Each device must be approved with the pairing code shown in Cortex, and you can revoke devices at any time. If the tunnel dies, Cortex replaces it by itself and shows the new address. Two current limits: the address changes when the Bridge restarts (you re-add the connector), and claude.ai shows Cloudflare's cloud icon for the connector because the address is on Cloudflare's shared tunnel domain.
 
 ## How your memory is organized
 

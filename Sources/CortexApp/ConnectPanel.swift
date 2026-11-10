@@ -233,6 +233,7 @@ private struct BridgeSection: View {
         switch model.bridgePhase {
         case .off: "Use your memory in Claude on the web and phone, ChatGPT and other computers"
         case .starting: "Starting secure tunnel…"
+        case .online where model.bridgeAddressChanged: "The tunnel dropped and was replaced — add the new connector URL again"
         case .online: model.bridge.pairedDevices.isEmpty ? "Online — pair your first device" : "Online · \(model.bridge.pairedDevices.count) device(s)"
         case .failed(let message): message
         }
